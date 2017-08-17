@@ -38,7 +38,7 @@ ctrl-r : Toggle insertion/overwrite mode
 Shft-up: If configured, increase value by a tick-size
 Shft-dn: If configured, decrease value by a tick-size
 """)
-type TwEntryData
+mutable struct TwEntryData
     valueType::DataType
     showHelp::Bool
     helpText::UTF8String
@@ -129,7 +129,7 @@ function draw( o::TwObj{TwEntryData} )
         box( o.window, 0,0 )
     end
     if !isempty( o.title ) && !o.data.titleLeft && o.box
-        mvwprintw( o.window, 0, (@compat round(Int, ( o.width - length(o.title) )/2 )), "%s", o.title )
+        mvwprintw( o.window, 0, (round(Int, ( o.width - length(o.title) )/2 )), "%s", o.title )
     end
     starty = o.borderSizeV
     startx = o.borderSizeH
@@ -596,7 +596,7 @@ function evalNFormat( data::TwEntryData, s::AbstractString, fieldcount::Int )
                     if !contains( fmt, "yyyy" ) && contains( fmt, "yy" ) && year(v) < 100
                         smally = year(v)
                         thisy = year(today())
-                        cent = @compat trunc( Int, floor( thisy, -2 ) )
+                        cent = trunc( Int, floor( thisy, -2 ) )
                         if abs(cent+smally - thisy)<=50
                             v = v + Year( cent )
                         else
@@ -607,7 +607,7 @@ function evalNFormat( data::TwEntryData, s::AbstractString, fieldcount::Int )
                     if !contains( fmt, "y" ) && year(v) < 100 # get to the nearest half year
                         smally = year(v)
                         thisy = year(today())
-                        if (@compat Int( v + Year( thisy - smally + 1) - today() )) < 182
+                        if (Int( v + Year( thisy - smally + 1) - today() )) < 182
                             v = v + Year( thisy - smally + 1)
                         else
                             v = v + Year( thisy - smally )
