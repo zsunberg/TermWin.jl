@@ -19,8 +19,8 @@ Three ways to instantiate the DataFrameAggr
 DataFrameAggrCache = Dict{Any,Function}()
 
 defaultAggr( ::Type{} ) = :uniqvalue
-defaultAggr{T<:Real}( ::Type{T} ) = :sum
-defaultAggr{T}( ::Type{Array{T,1}} ) = :unionall
+defaultAggr( ::Type{T} ) where {T<:Real} = :sum
+defaultAggr( ::Type{Array{T,1}} ) where {T} = :unionall
 
 function liftAggrSpecToFunc( c::Symbol, dfa::UTF8String )
     if haskey( DataFrameAggrCache, (c, dfa ) )
@@ -138,7 +138,7 @@ function uniqvalue( x::AbstractDataArray; skipna::Bool=true )
     return NA
 end
 
-function uniqvalue{T<:AbstractString}( x::Union{ Array{T}, DataArray{T}, PooledDataArray{T} }; skipna::Bool=true, skipempty::Bool=true )
+function uniqvalue( x::Union{ Array{T}, DataArray{T}, PooledDataArray{T} }; skipna::Bool=true, skipempty::Bool=true ) where T<:AbstractString
     lvls = DataArrays.levels(x)
     if skipna
         l = dropna( lvls )
@@ -175,7 +175,7 @@ function uniqvalue{T<:AbstractString}( x::Union{ Array{T}, DataArray{T}, PooledD
     return NA
 end
 
-immutable CalcPivot
+struct CalcPivot
     spec::Expr
     by::Array{Symbol,1}
     CalcPivot( x::UTF8String, by::Array{Symbol,1}=Symbol[] ) = CalcPivot( parse(x), by )
@@ -295,7 +295,7 @@ function liftCalcPivotToFunc( ex::Expr, by::Array{Symbol,1} )
     CalcPivotFuncCache[ (ex, by ) ] = ret
 end
 
-function cut_categories{S<:Real, T<:Real}( ::Type{S}, breaks::Vector{T};
+function cut_categories( ::Type{S}, breaks::Vector{T};
     boundedness = :unbounded,
     leftequal=true, # t1 <= x < t2 or t1 < x <= t2?
     absolute=false, # t1 <= |x| < t2?
@@ -309,7 +309,7 @@ function cut_categories{S<:Real, T<:Real}( ::Type{S}, breaks::Vector{T};
     prefix="", suffix="", scale=1, precision=-1,
     commas=false,stripzeros=(precision==-1),parens=false,
     mixedfraction=false,autoscale=:none,conversion=""
-    )
+    ) where {S<:Real, T<:Real}
     n = length(breaks)
     breakstrs = UTF8String[]
     function formatter(_)
@@ -456,7 +456,7 @@ end
 #    boundedbelow gives n   categories for n breaks. Values below min will be NA
 #    boundedabove gives n   categories for n breaks. Values above max will be NA
 #    bounded      gives n-1 categories for n breaks. Values below min or above max will be NA
-function discretize{S<:Real, T<:Real}(x::AbstractArray{S,1}, breaks::Vector{T};
+function discretize(x::AbstractArray{S,1}, breaks::Vector{T};
     boundedness = :unbounded,
     bucketstrs = UTF8String[], # if provided, all of below will be ignored. length must be length(breaks)+1
     leftequal=true, # t1 <= x < t2 or t1 < x <= t2?
@@ -471,7 +471,7 @@ function discretize{S<:Real, T<:Real}(x::AbstractArray{S,1}, breaks::Vector{T};
     prefix="", suffix="", scale=1, precision=-1,
     commas=false,stripzeros=(precision==-1),parens=false,
     mixedfraction=false,autoscale=:none,conversion=""
-    )
+    ) where {S<:Real, T<:Real}
     if !issorted(breaks)
         sort!(breaks)
     end
@@ -577,7 +577,7 @@ end
 # quantile-based auto-breaks
 # weighted quantile is not implemented
 # use scale=100.0, suffix="%", to express the quantiles in percentages
-function discretize{S<:Real}(x::AbstractArray{S,1}; quantiles = Float64[], ngroups::Int = 4, kwargs ... )
+function discretize(x::AbstractArray{S,1}; quantiles = Float64[], ngroups::Int = 4, kwargs ... ) where S<:Real
     if length( quantiles ) != 0
         if any( _ -> _ < 0.0 || _ > 1.0 , quantiles )
             error( "illegal quantile numbers outside [0,1]")
@@ -603,14 +603,14 @@ end
 
 # names are expected to be unique
 # n is the maximum rank number to report. Actual outcome may depend on existence of a tie, and dense option
-function topnames{S<:AbstractString,T<:Real}( name::AbstractArray{S,1}, measure::AbstractArray{T,1}, n::Int;
+function topnames( name::AbstractArray{S,1}, measure::AbstractArray{T,1}, n::Int;
     absolute=false,
     ranksep = ". ",
     dense = true, # if there is a tie in the 2nd place, do we do "1,2,2,4", or "1,2,2,3"
     tol = 0,  # if absolute, what is the smallest contribution that we would consider
     others = "Others",
     parens = false # put parentheses around names with negative measure?
-    )
+    ) where {S<:AbstractString,T<:Real}
 
     if absolute
         df = DataFrame( name = name, measure = measure, absmeasure = abs(measure) )
@@ -735,6 +735,6 @@ end
 import DataFrames.describe
 export describe
 
-function describe{T}( io, dv::Array{T,1} )
+function describe( io, dv::Array{T,1} ) where T
     describe( io, DataArray( dv ) )
 end

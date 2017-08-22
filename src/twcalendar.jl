@@ -14,12 +14,12 @@ m,M    : add/subtract a month
 q,Q    : add/subtract a quarter
 y,Y    : add/subtract a year
 """
-type TwCalendarData
+mutable struct TwCalendarData
     showHelp::Bool
     helpText::UTF8String
     date::Date
     cursorweekofmonth::Int # cached "nth week" in the current month containing date, 1-based
-    geometry::@compat Tuple{Int, Int} # rows x cols in months
+    geometry::Tuple{Int, Int} # rows x cols in months
     ncalStyle::Bool
     TwCalendarData( dt::Date ) = new( true, defaultCalendarHelpText, dt, 1, (1,1), false )
 end
@@ -83,11 +83,11 @@ function draw( o::TwObj{TwCalendarData} )
         box( o.window, 0,0 )
     end
     if !isempty( o.title ) && o.box
-        mvwprintw( o.window, 0, (@compat round( Int, ( o.width - length(o.title) )/2 )), "%s", o.title )
+        mvwprintw( o.window, 0, (round( Int, ( o.width - length(o.title) )/2 )), "%s", o.title )
     end
     starty = o.borderSizeV
     startx = o.borderSizeH
-    mvwprintw( o.window, starty, (@compat round( Int, ( o.width - 4 )/2 )), "%s", string(year(o.data.date)))
+    mvwprintw( o.window, starty, (round( Int, ( o.width - 4 )/2 )), "%s", string(year(o.data.date)))
     starty += 1
     # figure out the start month
     nummonths = o.data.geometry[1] * o.data.geometry[2]
